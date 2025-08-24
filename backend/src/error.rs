@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 use actix_web::http::StatusCode;
-use actix_web::{HttpResponse, Responder, ResponseError};
+use actix_web::{HttpResponse, ResponseError};
 
 #[derive(Error, Debug)]
 pub enum AppError {

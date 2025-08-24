@@ -1,0 +1,14 @@
+[package]
+name = "rcelery"
+version = "0.1.0"
+edition = "2024"
+
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+thiserror = { workspace = true }
+serde = { workspace = true }
+rcelery_macros = { path = "../rcelery_macros" }
+uuid = { workspace = true }

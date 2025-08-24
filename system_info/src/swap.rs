@@ -47,8 +47,6 @@ mod tests {
     fn test_get_swap_info() {
         let info = get_swap_info();
         // swap 总量大于等于0，已用大于等于0，使用率在0~1之间
-        assert!(info.total_kb >= 0);
-        assert!(info.used_kb >= 0);
         assert!(info.usage_ratio >= 0.0 && info.usage_ratio <= 1.0);
         println!(
             "swap total: {} KB, used: {} KB, usage: {:.2}%",

@@ -1480,6 +1480,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "rcelery"
+version = "0.1.0"
+dependencies = [
+ "rcelery_macros",
+ "serde",
+ "thiserror",
+ "uuid",
+]
+
+[[package]]
+name = "rcelery_macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "redox_syscall"
 version = "0.5.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"

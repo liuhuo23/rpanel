@@ -69,3 +69,31 @@ async fn save_files(
 
     Ok(Response::new(Some(file_paths), "Success".into(), 0))
 }
+
+#[get("/")]
+async fn list_images() -> Result<impl Responder, AppError> {
+    let img_root = Path::new("/mnt/Leven/img");
+    if !img_root.exists() {
+        return Ok(Response::new(
+            Some(Vec::<String>::new()),
+            "No images found".into(),
+            0,
+        ));
+    }
+    let mut images = Vec::new();
+    for entry in std::fs::read_dir(img_root).map_err(AppError::Io)? {
+        let entry = entry.map_err(AppError::Io)?;
+        let path = entry.path();
+        if path.is_file() {
+            if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                let ext = ext.to_lowercase();
+                if ["png", "jpg", "jpeg", "gif", "bmp"].contains(&ext.as_str()) {
+                    if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                        images.push(name.to_string());
+                    }
+                }
+            }
+        }
+    }
+    Ok(Response::new(Some(images), "Success".into(), 0))
+}

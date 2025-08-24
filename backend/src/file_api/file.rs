@@ -1,4 +1,4 @@
-use actix_web::{HttpResponse, Responder, get, web};
+use actix_web::{Responder, get, web};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
@@ -24,8 +24,8 @@ pub struct FileInfo {
 #[get("/")]
 pub async fn file_list(info: web::Query<Info>) -> Result<impl Responder, AppError> {
     let dir = info.dir.clone();
-    let page = info.page.unwrap_or(1);
-    let page_size = info.page_size.unwrap_or(10);
+    let _page = info.page.unwrap_or(1);
+    let _page_size = info.page_size.unwrap_or(10);
     let root = Path::new("/home");
     let path = root.join(dir);
     if path.exists() == false || path.is_dir() == false {

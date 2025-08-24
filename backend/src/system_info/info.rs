@@ -1,5 +1,5 @@
 use crate::base::Response;
-use actix_web::{HttpResponse, Responder, get};
+use actix_web::{Responder, get};
 use serde::Serialize;
 use system_info::cpu;
 #[derive(Serialize, serde::Deserialize)]

@@ -75,9 +75,7 @@ mod test {
 
     #[test]
     fn test_get_cpu_time() {
-        let (total, idle) = get_cpu_times();
-        assert!(total >= 0);
-        assert!(idle >= 0);
+        get_cpu_times();
     }
     #[test]
     fn test_usage() {
