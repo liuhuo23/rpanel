@@ -1,0 +1,23 @@
+
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+actix-web = "4"
+log = "*"
+serde = { workspace = true }
+system_info = { workspace = true }
+env_logger = "0.11.8"
+serde_json = { workspace = true }
+diesel = { version = "2.0", features = ["sqlite", "chrono"] } # chrono 用于时间类型支持
+dotenv = "0.15"                                               # 用于加载环境变量（存储数据库URL）
+actix-multipart = "0.7.2"
+uuid = { version = "1.18.0", features = ["v4"] }
+futures-util = "0.3.31"
