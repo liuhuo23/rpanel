@@ -1483,9 +1483,12 @@ dependencies = [
 name = "rcelery"
 version = "0.1.0"
 dependencies = [
+ "futures",
  "rcelery_macros",
  "serde",
+ "serde_json",
  "thiserror",
+ "tokio",
  "uuid",
 ]
 

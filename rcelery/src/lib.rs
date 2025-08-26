@@ -1,4 +1,7 @@
+pub mod celery_app;
 pub mod error;
+pub mod handler;
+pub mod queue;
 pub mod task;
 pub mod task_manage;
 
