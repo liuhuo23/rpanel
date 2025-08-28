@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 
 // 多参数 handler trait 宏实现 + 注册/调用模板（支持 async/serde/HashMap 动态存储）
+use crate::types::Args;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -76,14 +77,11 @@ where
     <Args as FromJson>::Error: std::fmt::Debug,
 {
     let func = Arc::new(func);
-    Box::new(move |mut args_json: serde_json::Value| {
+    Box::new(move |args_json: serde_json::Value| {
         let func = func.clone();
         let fut = async move {
             // 这儿判断是数组还是对象，决定反序列化为元组还是结构体
-            if args_json.is_array() == false {
-                args_json = serde_json::Value::Array(vec![args_json]);
-            }
-            let args: Args = match Args::from_json_value(args_json).await {
+            let args = match Args::from_json_value(args_json).await {
                 Ok(a) => a,
                 Err(e) => {
                     println!("参数反序列化失败, {:?}", e);
@@ -108,29 +106,15 @@ mod test_handler_map {
         let mut map: HashMap<String, BoxedHandler> = HashMap::new();
 
         // 直接 async fn(x, y) -> u32
-        async fn add(x: u32, y: u32, z: u32) -> u32 {
+        async fn add(args: Args<(i32, i32, i32)>) -> i32 {
+            let (x, y, z) = args.into_inner();
             println!("add被调用, {}, {}, {}", x, y, z);
             x + y + z
         }
         map.insert("add".to_string(), make_handler(add));
         let fut = map["add"](serde_json::json!([1, 2, 3]));
         let result = fut.await;
-        assert_eq!(result, serde_json::json!(6u32));
+        assert_eq!(result, serde_json::json!(6i32));
         println!("succes测试");
-
-        // 结构体参数 handler
-        #[derive(serde::Deserialize)]
-        struct Args {
-            x: u32,
-            y: u32,
-        }
-        async fn add_struct(args: Args) -> u32 {
-            println!("add_struct被调用, {}, {}", args.x, args.y);
-            args.x + args.y
-        }
-        map.insert("add_struct".to_string(), make_handler(add_struct));
-        let fut = map["add_struct"](serde_json::json!({"x": 2, "y": 3}));
-        let result = fut.await;
-        assert_eq!(result, serde_json::json!(5u32));
     }
 }

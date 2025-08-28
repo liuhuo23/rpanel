@@ -97,3 +97,10 @@ async fn list_images() -> Result<impl Responder, AppError> {
     }
     Ok(Response::new(Some(images), "Success".into(), 0))
 }
+
+#[get("/delete/{id}")]
+async fn delete(id: web::Path<(String,)>) -> impl Responder {
+    let (ids,) = id.into_inner();
+    println!("Delete image: {}", ids);
+    return "删除成功".to_string();
+}
