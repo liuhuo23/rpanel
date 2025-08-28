@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 
 // 多参数 handler trait 宏实现 + 注册/调用模板（支持 async/serde/HashMap 动态存储）
+use crate::task::Task;
 use crate::types::Args;
 use std::future::Future;
 use std::pin::Pin;
@@ -41,24 +42,24 @@ impl_handler! {
     9: (A, B, C, D, E, F, G, H, I),
     10:(A, B, C, D, E, F, G, H, I, J)
 }
+// If you need Handler for Args<T>, implement it manually here.
+// impl<Func, Fut, Res, T> Handler<(Args<T>,), Fut> for Func
+// where
+//     Func: Fn(Args<T>) -> Fut,
+//     Fut: Future<Output = Res>,
+//     T: Send + 'static,
+// {
+//     fn call(&self, args: (Args<T>,)) -> Fut {
+//         let (args,) = args;
+//         (self)(args)
+//     }
+// }
 
 pub trait FromJson: Sized {
     type Error;
     type Future: Future<Output = Result<Self, Self::Error>> + Send;
 
     fn from_json_value(val: serde_json::Value) -> Self::Future;
-}
-
-impl<T> FromJson for T
-where
-    T: serde::de::DeserializeOwned + Send + 'static,
-{
-    type Error = String;
-    type Future =
-        std::pin::Pin<Box<dyn std::future::Future<Output = Result<Self, Self::Error>> + Send>>;
-    fn from_json_value(val: serde_json::Value) -> Self::Future {
-        Box::pin(async move { serde_json::from_value::<T>(val).map_err(|e| e.to_string()) })
-    }
 }
 
 // 2. 通用 handler object-safe 类型和注册工具
@@ -80,7 +81,6 @@ where
     Box::new(move |args_json: serde_json::Value| {
         let func = func.clone();
         let fut = async move {
-            // 这儿判断是数组还是对象，决定反序列化为元组还是结构体
             let args = match Args::from_json_value(args_json).await {
                 Ok(a) => a,
                 Err(e) => {
@@ -106,13 +106,13 @@ mod test_handler_map {
         let mut map: HashMap<String, BoxedHandler> = HashMap::new();
 
         // 直接 async fn(x, y) -> u32
-        async fn add(args: Args<(i32, i32, i32)>) -> i32 {
+        async fn add(task: Task, args: Args<(i32, i32, i32)>) -> i32 {
             let (x, y, z) = args.into_inner();
             println!("add被调用, {}, {}, {}", x, y, z);
             x + y + z
         }
         map.insert("add".to_string(), make_handler(add));
-        let fut = map["add"](serde_json::json!([1, 2, 3]));
+        let fut = map["add"](serde_json::json!({"args":[1, 2, 3]}));
         let result = fut.await;
         assert_eq!(result, serde_json::json!(6i32));
         println!("succes测试");
