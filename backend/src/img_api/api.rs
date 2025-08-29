@@ -98,9 +98,9 @@ async fn list_images() -> Result<impl Responder, AppError> {
     Ok(Response::new(Some(images), "Success".into(), 0))
 }
 
-#[get("/delete/{id}")]
-async fn delete(id: web::Path<(String,)>) -> impl Responder {
-    let (ids,) = id.into_inner();
-    println!("Delete image: {}", ids);
-    return "删除成功".to_string();
+#[get("/delete/{path}/{dir}")]
+async fn delete(path: web::Path<(String, String)>) -> Result<impl Responder, AppError> {
+    let path_dir = path.into_inner();
+    println!("path: {}, dir: {}", path_dir.0, path_dir.1);
+    return Ok("删除成功".to_string());
 }
