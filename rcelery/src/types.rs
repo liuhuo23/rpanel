@@ -78,58 +78,135 @@ where
     }
 }
 
-impl<T> FromJson for (Args<T>, Task)
-where
-    Args<T>: FromJson,
-    <Args<T> as FromJson>::Error: std::fmt::Debug,
-{
-    type Error = String;
-    type Future =
-        std::pin::Pin<Box<dyn std::future::Future<Output = Result<Self, Self::Error>> + Send>>;
-
-    fn from_json_value(val: serde_json::Value) -> Self::Future {
-        Box::pin(async move {
-            let arg_res = Args::<T>::from_json_value(val.clone()).await;
-
-            let res = serde_json::from_value::<Task>(val).map_err(|e| e.to_string());
-            match res {
-                Err(e) => {
-                    println!("Task 反序列化失败, {:?}", e);
-                    return Err(e);
-                }
-                Ok(t) => match arg_res {
-                    Ok(arg) => return Ok((arg, t)),
-                    Err(e) => return Err(format!("Args 反序列化失败, {:?}", e)),
-                },
+// 支持 n 元组的 FromJson 宏实现（最多 5 元组，可自行扩展）
+macro_rules! impl_from_json_tuple_n {
+    // 2 元组
+    ($name1:ident : $ty1:ty, $name2:ident : $ty2:ty) => {
+        impl<T> FromJson for ($ty1, $ty2)
+        where
+            $ty1: for<'de> serde::Deserialize<'de>,
+            $ty2: FromJson,
+            <$ty2 as FromJson>::Error: std::fmt::Debug,
+        {
+            type Error = String;
+            type Future = std::pin::Pin<
+                Box<dyn std::future::Future<Output = Result<Self, Self::Error>> + Send>,
+            >;
+            fn from_json_value(val: serde_json::Value) -> Self::Future {
+                Box::pin(async move {
+                    let $name2 = <$ty2>::from_json_value(val.clone()).await;
+                    let $name1 = serde_json::from_value::<$ty1>(val).map_err(|e| e.to_string());
+                    match $name1 {
+                        Err(e) => {
+                            println!(concat!(stringify!($ty1), " 反序列化失败, {:?}"), e);
+                            return Err(e);
+                        }
+                        Ok($name1) => match $name2 {
+                            Ok($name2) => Ok(($name1, $name2)),
+                            Err(e) => {
+                                Err(format!(concat!(stringify!($ty2), " 反序列化失败, {:?}"), e))
+                            }
+                        },
+                    }
+                })
             }
-        })
-    }
+        }
+    };
+    // 3 元组
+    ($name1:ident : $ty1:ty, $name2:ident : $ty2:ty, $name3:ident : $ty3:ty) => {
+        impl<T> FromJson for ($ty1, $ty2, $ty3)
+        where
+            $ty1: for<'de> serde::Deserialize<'de>,
+            ($ty2, $ty3): FromJson,
+            <($ty2, $ty3) as FromJson>::Error: std::fmt::Debug,
+        {
+            type Error = String;
+            type Future = std::pin::Pin<
+                Box<dyn std::future::Future<Output = Result<Self, Self::Error>> + Send>,
+            >;
+            fn from_json_value(val: serde_json::Value) -> Self::Future {
+                Box::pin(async move {
+                    let rest = <($ty2, $ty3)>::from_json_value(val.clone()).await;
+                    let $name1 = serde_json::from_value::<$ty1>(val).map_err(|e| e.to_string());
+                    match $name1 {
+                        Err(e) => {
+                            println!(concat!(stringify!($ty1), " 反序列化失败, {:?}"), e);
+                            return Err(e);
+                        }
+                        Ok($name1) => match rest {
+                            Ok(($name2, $name3)) => Ok(($name1, $name2, $name3)),
+                            Err(e) => Err(format!("rest 反序列化失败, {:?}", e)),
+                        },
+                    }
+                })
+            }
+        }
+    };
+    // 4 元组
+    ($name1:ident : $ty1:ty, $name2:ident : $ty2:ty, $name3:ident : $ty3:ty, $name4:ident : $ty4:ty) => {
+        impl<T> FromJson for ($ty1, $ty2, $ty3, $ty4)
+        where
+            $ty1: for<'de> serde::Deserialize<'de>,
+            ($ty2, $ty3, $ty4): FromJson,
+            <($ty2, $ty3, $ty4) as FromJson>::Error: std::fmt::Debug,
+        {
+            type Error = String;
+            type Future = std::pin::Pin<
+                Box<dyn std::future::Future<Output = Result<Self, Self::Error>> + Send>,
+            >;
+            fn from_json_value(val: serde_json::Value) -> Self::Future {
+                Box::pin(async move {
+                    let rest = <($ty2, $ty3, $ty4)>::from_json_value(val.clone()).await;
+                    let $name1 = serde_json::from_value::<$ty1>(val).map_err(|e| e.to_string());
+                    match $name1 {
+                        Err(e) => {
+                            println!(concat!(stringify!($ty1), " 反序列化失败, {:?}"), e);
+                            return Err(e);
+                        }
+                        Ok($name1) => match rest {
+                            Ok(($name2, $name3, $name4)) => Ok(($name1, $name2, $name3, $name4)),
+                            Err(e) => Err(format!("rest 反序列化失败, {:?}", e)),
+                        },
+                    }
+                })
+            }
+        }
+    };
+    // 5 元组
+    ($name1:ident : $ty1:ty, $name2:ident : $ty2:ty, $name3:ident : $ty3:ty, $name4:ident : $ty4:ty, $name5:ident : $ty5:ty) => {
+        impl<T> FromJson for ($ty1, $ty2, $ty3, $ty4, $ty5)
+        where
+            $ty1: for<'de> serde::Deserialize<'de>,
+            ($ty2, $ty3, $ty4, $ty5): FromJson,
+            <($ty2, $ty3, $ty4, $ty5) as FromJson>::Error: std::fmt::Debug,
+        {
+            type Error = String;
+            type Future = std::pin::Pin<
+                Box<dyn std::future::Future<Output = Result<Self, Self::Error>> + Send>,
+            >;
+            fn from_json_value(val: serde_json::Value) -> Self::Future {
+                Box::pin(async move {
+                    let rest = <($ty2, $ty3, $ty4, $ty5)>::from_json_value(val.clone()).await;
+                    let $name1 = serde_json::from_value::<$ty1>(val).map_err(|e| e.to_string());
+                    match $name1 {
+                        Err(e) => {
+                            println!(concat!(stringify!($ty1), " 反序列化失败, {:?}"), e);
+                            return Err(e);
+                        }
+                        Ok($name1) => match rest {
+                            Ok(($name2, $name3, $name4, $name5)) => {
+                                Ok(($name1, $name2, $name3, $name4, $name5))
+                            }
+                            Err(e) => Err(format!("rest 反序列化失败, {:?}", e)),
+                        },
+                    }
+                })
+            }
+        }
+    };
 }
 
-impl<T> FromJson for (Task, Args<T>)
-where
-    Args<T>: FromJson,
-    <Args<T> as FromJson>::Error: std::fmt::Debug,
-{
-    type Error = String;
-    type Future =
-        std::pin::Pin<Box<dyn std::future::Future<Output = Result<Self, Self::Error>> + Send>>;
-
-    fn from_json_value(val: serde_json::Value) -> Self::Future {
-        Box::pin(async move {
-            let arg_res = Args::<T>::from_json_value(val.clone()).await;
-
-            let res = serde_json::from_value::<Task>(val).map_err(|e| e.to_string());
-            match res {
-                Err(e) => {
-                    println!("Task 反序列化失败, {:?}", e);
-                    return Err(e);
-                }
-                Ok(t) => match arg_res {
-                    Ok(arg) => return Ok((t, arg)),
-                    Err(e) => return Err(format!("Args 反序列化失败, {:?}", e)),
-                },
-            }
-        })
-    }
-}
+// 用法示例：
+impl_from_json_tuple_n!(a: Task, b: Args<T>);
+impl_from_json_tuple_n!(a: Args<T>, b: Task);
+// 如需支持更多元组，继续扩展宏即可。
