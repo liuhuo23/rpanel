@@ -108,6 +108,7 @@ mod test_handler_map {
         // 直接 async fn(x, y) -> u32
         async fn add(task: Task, args: Args<(i32, i32, i32)>) -> i32 {
             let (x, y, z) = args.into_inner();
+            println!("测试");
             println!("add被调用, {}, {}, {}", x, y, z);
             x + y + z
         }
