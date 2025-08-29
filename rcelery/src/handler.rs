@@ -1,8 +1,6 @@
 #![allow(non_snake_case)]
 
 // 多参数 handler trait 宏实现 + 注册/调用模板（支持 async/serde/HashMap 动态存储）
-use crate::task::Task;
-use crate::types::Args;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -99,6 +97,8 @@ where
 #[cfg(test)]
 mod test_handler_map {
     use super::*;
+    use crate::task::Task;
+    use crate::types::Args;
     use std::collections::HashMap;
 
     #[tokio::test]
