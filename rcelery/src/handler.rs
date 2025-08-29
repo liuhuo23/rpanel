@@ -40,18 +40,6 @@ impl_handler! {
     9: (A, B, C, D, E, F, G, H, I),
     10:(A, B, C, D, E, F, G, H, I, J)
 }
-// If you need Handler for Args<T>, implement it manually here.
-// impl<Func, Fut, Res, T> Handler<(Args<T>,), Fut> for Func
-// where
-//     Func: Fn(Args<T>) -> Fut,
-//     Fut: Future<Output = Res>,
-//     T: Send + 'static,
-// {
-//     fn call(&self, args: (Args<T>,)) -> Fut {
-//         let (args,) = args;
-//         (self)(args)
-//     }
-// }
 
 pub trait FromJson: Sized {
     type Error;
@@ -80,9 +68,6 @@ where
         let func = func.clone();
         let fut = async move {
             // 这儿判断是数组还是对象，决定反序列化为元组还是结构体
-            if args_json.is_array() == false {
-                args_json = serde_json::Value::Array(vec![args_json]);
-            }
             let args = Args::from_json_value(args_json)
                 .await
                 .expect("参数反序列化失败");
@@ -116,29 +101,5 @@ mod test_handler_map {
         let result = fut.await;
         assert_eq!(result, serde_json::json!(6i32));
         println!("succes测试");
-
-        // 结构体参数 handler
-        #[derive(serde::Deserialize)]
-        struct Args {
-            x: u32,
-            y: u32,
-        }
-        async fn add_struct(args: Args) -> u32 {
-            println!("add_struct被调用, {}, {}", args.x, args.y);
-            args.x + args.y
-        }
-        map.insert("add_struct".to_string(), make_handler(add_struct));
-        let fut = map["add_struct"](serde_json::json!({"x": 2, "y": 3}));
-        let result = fut.await;
-        assert_eq!(result, serde_json::json!(5u32));
-
-        async fn struct_args(a: i32, b: i32, args: Args) -> i32 {
-            println!("struct_args被调用, {}, {}, {}, {}", a, b, args.x, args.y);
-            a + b + (args.x as i32) + (args.y as i32)
-        }
-        map.insert("struct_args".to_string(), make_handler(struct_args));
-        let fut = map["struct_args"](serde_json::json!([{"x": 3, "y": 4}, 1, 2]));
-        let result = fut.await;
-        assert_eq!(result, serde_json::json!(10i32));
     }
 }
