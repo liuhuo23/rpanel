@@ -6,4 +6,4 @@ edition = "2024"
 [dependencies]
 backend = { path = "../backend" }
 futures = "0.3"
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["full"] }

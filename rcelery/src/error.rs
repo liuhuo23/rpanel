@@ -10,4 +10,7 @@ pub enum CeleryError {
 
     #[error("未知错误")]
     Unknown,
+
+    #[error("连接错误: {0}")]
+    ConnectionError(String),
 }
